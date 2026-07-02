@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 960" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#455a75"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e07b39"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3a9b6e"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1260" height="960" fill="#f7f9fc"/>
+
+  <!-- Title -->
+  <text x="630" y="42" text-anchor="middle" font-size="26" font-weight="700" fill="#1f2d3d">How We Evaluate &amp; Improve Our Copilot Agents</text>
+  <text x="630" y="68" text-anchor="middle" font-size="15" fill="#5a6b7f">Test with a small fixed dataset first → score by hand → fix the biggest problems → repeat until quality is proven → then go live</text>
+
+  <!-- ================= MAIN FLOW (left column) ================= -->
+
+  <!-- Step 1 -->
+  <rect x="100" y="95" width="480" height="105" rx="10" fill="#e8f0fe" stroke="#3b6fc4" stroke-width="2"/>
+  <circle cx="130" cy="125" r="16" fill="#3b6fc4"/>
+  <text x="130" y="131" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">1</text>
+  <text x="158" y="131" font-size="17" font-weight="700" fill="#1f2d3d">Build a Golden Dataset</text>
+  <text x="122" y="156" font-size="13.5" fill="#33475b">Pick 10–20 real documents per agent type (easy + hard cases).</text>
+  <text x="122" y="176" font-size="13.5" fill="#33475b">Write the expected answers / reference summaries. Then freeze it.</text>
+
+  <line x1="340" y1="200" x2="340" y2="230" stroke="#455a75" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 2 -->
+  <rect x="100" y="232" width="480" height="90" rx="10" fill="#e8f0fe" stroke="#3b6fc4" stroke-width="2"/>
+  <circle cx="130" cy="262" r="16" fill="#3b6fc4"/>
+  <text x="130" y="268" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">2</text>
+  <text x="158" y="268" font-size="17" font-weight="700" fill="#1f2d3d">Run the Baseline</text>
+  <text x="122" y="293" font-size="13.5" fill="#33475b">Feed every test item to the agents as they are today.</text>
+  <text x="122" y="312" font-size="13.5" fill="#33475b">Save all outputs — this is the "before" picture.</text>
+
+  <line x1="340" y1="322" x2="340" y2="352" stroke="#455a75" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 3 -->
+  <rect x="100" y="354" width="480" height="105" rx="10" fill="#e8f0fe" stroke="#3b6fc4" stroke-width="2"/>
+  <circle cx="130" cy="384" r="16" fill="#3b6fc4"/>
+  <text x="130" y="390" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">3</text>
+  <text x="158" y="390" font-size="17" font-weight="700" fill="#1f2d3d">Score by Hand</text>
+  <text x="122" y="415" font-size="13.5" fill="#33475b">Rate each output: Pass / Partial / Fail per criterion (see cards →).</text>
+  <text x="122" y="435" font-size="13.5" fill="#33475b">Two reviewers score 20% of items to make sure ratings agree.</text>
+
+  <line x1="340" y1="459" x2="340" y2="489" stroke="#455a75" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 4 -->
+  <rect x="100" y="491" width="480" height="105" rx="10" fill="#fdf1e7" stroke="#e07b39" stroke-width="2"/>
+  <circle cx="130" cy="521" r="16" fill="#e07b39"/>
+  <text x="130" y="527" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">4</text>
+  <text x="158" y="527" font-size="17" font-weight="700" fill="#1f2d3d">Map Failures → Fix the Top 2–3</text>
+  <text x="122" y="552" font-size="13.5" fill="#33475b">Tag every failure with a cause (see cheat sheet →).</text>
+  <text x="122" y="572" font-size="13.5" fill="#33475b">Fix only the most frequent problems — not everything at once.</text>
+
+  <line x1="340" y1="596" x2="340" y2="626" stroke="#455a75" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 5 -->
+  <rect x="100" y="628" width="480" height="105" rx="10" fill="#fdf1e7" stroke="#e07b39" stroke-width="2"/>
+  <circle cx="130" cy="658" r="16" fill="#e07b39"/>
+  <text x="130" y="664" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">5</text>
+  <text x="158" y="664" font-size="17" font-weight="700" fill="#1f2d3d">Change ONE Thing → Re-run the Tests</text>
+  <text x="122" y="689" font-size="13.5" fill="#33475b">One prompt edit (or one source change) per round, then re-test all.</text>
+  <text x="122" y="709" font-size="13.5" fill="#33475b">Keep the change only if scores improve and nothing else got worse.</text>
+
+  <!-- Loop back from Step 5 to Step 3 -->
+  <path d="M 100 680 C 40 680, 40 407, 96 407" fill="none" stroke="#e07b39" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrowOrange)"/>
+  <text x="52" y="540" font-size="13" font-weight="700" fill="#c05f1d" transform="rotate(-90 52 540)">repeat until ≥ 90% Pass</text>
+
+  <line x1="340" y1="733" x2="340" y2="763" stroke="#3a9b6e" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <text x="356" y="753" font-size="12.5" font-weight="600" fill="#3a9b6e">quality proven ✓</text>
+
+  <!-- Step 6 -->
+  <rect x="100" y="765" width="480" height="105" rx="10" fill="#e6f5ee" stroke="#3a9b6e" stroke-width="2"/>
+  <circle cx="130" cy="795" r="16" fill="#3a9b6e"/>
+  <text x="130" y="801" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">6</text>
+  <text x="158" y="801" font-size="17" font-weight="700" fill="#1f2d3d">Go Live &amp; Keep Watching</text>
+  <text x="122" y="826" font-size="13.5" fill="#33475b">Pilot with real users. Collect thumbs up / down + comments weekly.</text>
+  <text x="122" y="846" font-size="13.5" fill="#33475b">Every new real-world failure becomes a new test case in Step 1.</text>
+
+  <!-- Feedback loop from Step 6 back to Step 1 -->
+  <path d="M 580 840 C 660 840, 660 148, 586 148" fill="none" stroke="#3a9b6e" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrowGreen)"/>
+  <text x="648" y="500" font-size="13" font-weight="700" fill="#2c7a55" transform="rotate(-90 648 500)">new failures become new tests</text>
+
+  <!-- ================= RIGHT COLUMN: scoring cards ================= -->
+
+  <text x="700" y="112" font-size="16" font-weight="700" fill="#1f2d3d">What "good" means — per agent type</text>
+
+  <!-- Q&A card -->
+  <rect x="700" y="125" width="510" height="160" rx="10" fill="#ffffff" stroke="#8fa6c4" stroke-width="1.5"/>
+  <rect x="700" y="125" width="510" height="34" rx="10" fill="#3b6fc4"/>
+  <rect x="700" y="145" width="510" height="14" fill="#3b6fc4"/>
+  <text x="716" y="148" font-size="15" font-weight="700" fill="#fff">Q&amp;A Agents — scoring checklist</text>
+  <text x="722" y="185" font-size="13.5" fill="#33475b">☐ Found the right document?</text>
+  <text x="722" y="208" font-size="13.5" fill="#33475b">☐ Answer is correct and backed by the source?</text>
+  <text x="722" y="231" font-size="13.5" fill="#33475b">☐ No made-up facts? (any hallucination = automatic Fail)</text>
+  <text x="722" y="254" font-size="13.5" fill="#33475b">☐ Says "I don't know" when the answer isn't in our documents?</text>
+  <text x="722" y="277" font-size="13.5" fill="#33475b">☐ All parts of a multi-part question answered?</text>
+
+  <!-- Summary card -->
+  <rect x="700" y="300" width="510" height="160" rx="10" fill="#ffffff" stroke="#8fa6c4" stroke-width="1.5"/>
+  <rect x="700" y="300" width="510" height="34" rx="10" fill="#5b4fb5"/>
+  <rect x="700" y="320" width="510" height="14" fill="#5b4fb5"/>
+  <text x="716" y="323" font-size="15" font-weight="700" fill="#fff">Summary Agents — scoring checklist</text>
+  <text x="722" y="360" font-size="13.5" fill="#33475b">☐ Output follows the required format / template?</text>
+  <text x="722" y="383" font-size="13.5" fill="#33475b">☐ All key facts from the source are included?</text>
+  <text x="722" y="406" font-size="13.5" fill="#33475b">☐ Numbers, units and codes copied exactly? (zero tolerance)</text>
+  <text x="722" y="429" font-size="13.5" fill="#33475b">☐ Engineering logic (cause → effect) still makes sense?</text>
+  <text x="722" y="452" font-size="13.5" fill="#33475b">☐ Would you send it to a colleague without editing?</text>
+
+  <!-- Cheat sheet card -->
+  <rect x="700" y="490" width="510" height="220" rx="10" fill="#ffffff" stroke="#dba173" stroke-width="1.5"/>
+  <rect x="700" y="490" width="510" height="34" rx="10" fill="#e07b39"/>
+  <rect x="700" y="510" width="510" height="14" fill="#e07b39"/>
+  <text x="716" y="513" font-size="15" font-weight="700" fill="#fff">Failure → Fix cheat sheet (Step 4)</text>
+  <text x="722" y="550" font-size="13.5" fill="#33475b"><tspan font-weight="700">Made-up facts</tspan>  →  add rule: "answer ONLY from the sources"</text>
+  <text x="722" y="576" font-size="13.5" fill="#33475b"><tspan font-weight="700">Wrong format</tspan>  →  add a full example output to the prompt</text>
+  <text x="722" y="602" font-size="13.5" fill="#33475b"><tspan font-weight="700">Missing details</tspan>  →  replace "be thorough" with an explicit checklist</text>
+  <text x="722" y="628" font-size="13.5" fill="#33475b"><tspan font-weight="700">Too long / short</tspan>  →  set a concrete length ("max 5 bullets")</text>
+  <text x="722" y="654" font-size="13.5" fill="#33475b"><tspan font-weight="700">Wrong document found</tspan>  →  fix the source files, not the prompt</text>
+  <text x="722" y="686" font-size="13" font-style="italic" fill="#8a6142">If 3 prompt edits don't fix it → the problem is the documents or the</text>
+  <text x="722" y="704" font-size="13" font-style="italic" fill="#8a6142">agent's job design, not the wording.</text>
+
+  <!-- Rules of thumb strip -->
+  <rect x="700" y="740" width="510" height="130" rx="10" fill="#eef2f7" stroke="#b9c6d6" stroke-width="1.5"/>
+  <text x="716" y="768" font-size="15" font-weight="700" fill="#1f2d3d">Rules of thumb</text>
+  <text x="722" y="794" font-size="13.5" fill="#33475b">•  Manual scoring first — automate (LLM-as-judge) only after the</text>
+  <text x="734" y="812" font-size="13.5" fill="#33475b">rubric is stable and agrees with humans ≥ 85% of the time.</text>
+  <text x="722" y="836" font-size="13.5" fill="#33475b">•  One change per round — otherwise you can't tell what helped.</text>
+  <text x="722" y="858" font-size="13.5" fill="#33475b">•  Keep a changelog: prompt version → score change.</text>
+
+  <!-- dashed connectors from step 3 to cards -->
+  <path d="M 580 385 C 640 385, 640 205, 696 205" fill="none" stroke="#8fa6c4" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+  <path d="M 580 545 C 640 545, 640 600, 696 600" fill="none" stroke="#dba173" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrowOrange)"/>
+
+  <text x="630" y="930" text-anchor="middle" font-size="12.5" fill="#8595a8">Target before go-live: ≥ 90% Pass on accuracy &amp; no-hallucination · ≥ 80% Pass overall on the golden dataset</text>
+</svg>
