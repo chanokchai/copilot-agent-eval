@@ -343,12 +343,21 @@ items = [
  ("INV-T02",jjb,"(not in corpus)","What is the total invoice amount from Oakley Inc. for Q2 2026?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
 ]
 
-DATA_TOP = 13
+agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot"]
+
+# The summary table's height, and every fixed section below it (TEST ITEMS header, subtitle,
+# item-log header, DATA_TOP), are derived from len(agents) so a 5th/6th/... agent can never
+# collide with the section that follows it (a 5th agent previously overwrote the "TEST ITEMS"
+# header, which was hardcoded at row 9 assuming at most 4 agents).
+SUMMARY_ROW_START = 5
+TEST_ITEMS_ROW = SUMMARY_ROW_START + len(agents)  # immediately below the last summary row
+SUBTITLE_ROW = TEST_ITEMS_ROW + 1
+HEADER_ROW = SUBTITLE_ROW + 2  # one blank spacer row before the item-log header
+DATA_TOP = HEADER_ROW + 1
 ITEM_BLANK_BUFFER = 8  # extra pre-formatted empty rows left for the team to add items later
 DATA_BOT = DATA_TOP + len(items) - 1 + ITEM_BLANK_BUFFER
 
-agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot"]
-for r, name in enumerate(agents, 5):
+for r, name in enumerate(agents, SUMMARY_ROW_START):
     style(ws4, f"A{r}", name, size=9)
     style(ws4, f"B{r}", f'=COUNTIF($B${DATA_TOP}:$B${DATA_BOT},$A{r})', size=9, center=True)
     for col, sc in zip("CDEF", "GHIJ"):
@@ -357,19 +366,18 @@ for r, name in enumerate(agents, 5):
              f'COUNTIFS($B${DATA_TOP}:$B${DATA_BOT},$A{r},{sc}${DATA_TOP}:{sc}${DATA_BOT},"<>"))')
         style(ws4, f"{col}{r}", f, size=9, center=True, bold=True, fmt="0%")
 
-style(ws4, "A9", "TEST ITEMS", bold=True, size=11, fill=DARK, color="FFFFFF")
-ws4.merge_cells("A9:L9")
+style(ws4, f"A{TEST_ITEMS_ROW}", "TEST ITEMS", bold=True, size=11, fill=DARK, color="FFFFFF")
+ws4.merge_cells(f"A{TEST_ITEMS_ROW}:L{TEST_ITEMS_ROW}")
 for col in "BCDEFGHIJKL":
-    ws4[f"{col}9"].fill = PatternFill("solid", start_color=DARK); ws4[f"{col}9"].border = BORDER
-style(ws4, "A10", "Score meaning: Pass = usable as-is · Partial = needs edits · Fail = wrong / made-up (see Sheet 3). Leave a score blank if the run has not happened yet.", size=8.5, color="5A6B7F", border=False)
-ws4.merge_cells("A10:L10")
+    ws4[f"{col}{TEST_ITEMS_ROW}"].fill = PatternFill("solid", start_color=DARK); ws4[f"{col}{TEST_ITEMS_ROW}"].border = BORDER
+style(ws4, f"A{SUBTITLE_ROW}", "Score meaning: Pass = usable as-is · Partial = needs edits · Fail = wrong / made-up (see Sheet 3). Leave a score blank if the run has not happened yet.", size=8.5, color="5A6B7F", border=False)
+ws4.merge_cells(f"A{SUBTITLE_ROW}:L{SUBTITLE_ROW}")
 
 h4 = ["Item ID","Agent Name","Source Document","Question / Task","Expected Answer / Reference","Trap?",
       "Baseline","Round 1","Round 2","Round 3","Latest Failure Tag","Notes"]
 f4 = [GRAY]*6 + [P1] + [P3]*3 + [P2, GRAY]
-HR_ROW = 12
 for i, (h, f) in enumerate(zip(h4, f4), 1):
-    style(ws4, f"{get_column_letter(i)}{HR_ROW}", h, bold=True, size=9, fill=f, center=True)
+    style(ws4, f"{get_column_letter(i)}{HEADER_ROW}", h, bold=True, size=9, fill=f, center=True)
 
 for r, row in enumerate(items, DATA_TOP):
     for c, v in enumerate(row, 1):
@@ -391,7 +399,7 @@ for col in "GHIJ":
 
 for k, v in {"A":9,"B":24,"C":22,"D":44,"E":40,"F":7,"G":10,"H":10,"I":10,"J":10,"K":16,"L":48}.items():
     ws4.column_dimensions[k].width = v
-ws4.row_dimensions[2].height = 30; ws4.row_dimensions[10].height = 14; ws4.row_dimensions[12].height = 26
+ws4.row_dimensions[2].height = 30; ws4.row_dimensions[SUBTITLE_ROW].height = 14; ws4.row_dimensions[HEADER_ROW].height = 26
 ws4.freeze_panes = f"C{DATA_TOP}"
 
 import sys
