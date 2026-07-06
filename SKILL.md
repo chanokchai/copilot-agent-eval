@@ -9,6 +9,7 @@ description: Design and deliver a complete evaluation & optimization package for
 
 - `assets/copilot-agent-evaluation-flow.svg` — the reference process diagram. Copy it to the user's project when they ask for a visual; only redraw if they want changes.
 - `scripts/build_tracker.py` — generates the complete 4-sheet Excel tracker (`pip install openpyxl`, then `python scripts/build_tracker.py [output.xlsx]`). To create a tracker for the user's own agents, **edit the `rows`, `log`, and `items` data blocks in this script** rather than writing a new one — the formatting, formulas, dropdowns, and cross-sheet reconciliation are already correct. The script prints a pass-rate self-check after saving; confirm those numbers match the story you put in the data.
+- **Always pass an output path outside any dot-prefixed folder** (e.g. a `reports/` folder at the project root, not `.claude/skills/.../scripts/`). If the project is synced via OneDrive, files under a folder whose name starts with `.` can fail to open in Excel with an "invalid path" error even though the file itself is valid — moving the same bytes to a normal folder fixes it immediately. Skill folders are for source, not generated deliverables.
 
 ## Quick mode — "here is my agent, give me a checklist"
 
