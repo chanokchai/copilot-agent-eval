@@ -87,6 +87,11 @@ rows = [
   None,"Not Started",
   None,None,"Not Started", None,None,"Not Started",
   None,"Writing test questions (2 drafted in Sheet 4, 45 planned incl. trap questions)."],
+ [4,"JJB Invoice Q&A Bot","Q&A","Answers questions about supplier invoices using the AP knowledge base","TBD (assign owner)","Supplier invoices (AP knowledge base)",
+  8,10,"In Progress",None, None,None,"Not Started",
+  None,"Not Started",
+  None,None,"Not Started", None,None,"Not Started",
+  None,"Checklist + 10 draft test items written (2 traps). Grow to 10-20 source docs, then run baseline."],
 ]
 DATE_COLS = {10, 11, 19}; PCT_COLS = {12, 17, 20}
 for r, row in enumerate(rows, 5):
@@ -105,7 +110,7 @@ for cell, f in links.items():
     ws[cell].font = Font(name=ARIAL, size=9, color=GREEN_LINK)
     ws[cell].number_format = "0%"
 
-for r in range(8, 16):
+for r in range(9, 17):
     for c in range(1, 24):
         style(ws, f"{get_column_letter(c)}{r}", None, size=9)
     ws[f"V{r}"] = f'=IF(B{r}="","",COUNTIF(I{r},"Done")+COUNTIF(M{r},"Done")+COUNTIF(O{r},"Done")+COUNTIF(R{r},"Done")+COUNTIF(U{r},"Done"))'
@@ -219,12 +224,45 @@ summ = [("Does the output follow the required format / template?","Sections miss
         ("Are numbers, units and codes copied exactly?","A value, unit or part code is wrong (zero tolerance)","Pass"),
         ("Does the engineering logic (cause → effect) still make sense?","Constraints or reasoning are garbled by the summary","Pass"),
         ("Would you send it to a colleague without editing?","You would need to rewrite parts before sharing","Pass")]
-checklist(nxt, "SUMMARY AGENTS — score every test summary against these 5 checks", "5B4FB5", summ,
+nxt2 = checklist(nxt, "SUMMARY AGENTS — score every test summary against these 5 checks", "5B4FB5", summ,
       "Example above: 4 Pass + 1 Partial → record in Sheet 4 as Partial overall and tag the failure type \"Missing details\". This is exactly how item ES-10 was scored in Round 1.")
 
 dv_score = DataValidation(type="list", formula1='"Pass,Partial,Fail"', allow_blank=True)
 ws3.add_data_validation(dv_score)
 dv_score.add("D10:D14"); dv_score.add(f"D{nxt+2}:D{nxt+6}")
+
+# ---- Agent-specific checklists — context-matched (domain FAIL examples), appended as each agent's
+# checklist is authored via the Quick-mode workflow. Use alongside — not instead of — the generic
+# type-level checklists above; these give a tester the exact domain wording for that one agent.
+agent_checklists = [
+    ("JJB Invoice Q&A Bot", "1F9D89", [
+        ("Did it retrieve the correct invoice (right supplier, invoice #, or date range)?",
+         "Cites or uses a different invoice or supplier", "Pass"),
+        ("Do the figures (amounts, dates, VAT, PO #) match the invoice exactly?",
+         "States EUR 18,032.50 when the invoice shows EUR 18,320.50 (digits transposed)", "Pass"),
+        ("Is every claim traceable to the invoice/AP record? (no invented terms)",
+         "States \"Net 30 payment terms\" when no such field exists on the invoice", "Fail"),
+        ("Does it say \"I don't know\" for suppliers/fields not in the AP knowledge base?",
+         "Invents a discount % for a supplier not in the corpus (e.g. Oakley Inc.)", "Pass"),
+        ("Are all parts of multi-part questions (amount + date + status) answered?",
+         "Gives the total amount but omits the due date", "Partial"),
+    ], "Example: item INV-Q07 (date + subtotal + total after tax) scores Pass on all three sub-answers "
+       "→ Pass overall. Item INV-T01 (a trap question) would Fail checks 3 and 4 if the agent invents a "
+       "discount % instead of saying it doesn't know → record as Fail and tag \"Made-up facts\"."),
+]
+
+if agent_checklists:
+    style(ws3, f"A{nxt2}",
+          "AGENT-SPECIFIC CHECKLISTS — use alongside the generic checklist above when scoring that agent's "
+          "items (one block per agent, added as each agent's checklist is authored)",
+          bold=True, size=9, color="5A6B7F", border=False)
+    ws3.merge_cells(f"A{nxt2}:D{nxt2}")
+    nxt2 += 2
+    for name, color, items_, example_ in agent_checklists:
+        start = nxt2
+        nxt2 = checklist(start, f"{name.upper()} — AGENT-SPECIFIC CHECKLIST", color, items_, example_)
+        dv_score.add(f"D{start+2}:D{start+1+len(items_)}")
+
 for k, v in {"A":9,"B":52,"C":44,"D":16}.items(): ws3.column_dimensions[k].width = v
 
 # ---------------- Sheet 4: Test Item Log ----------------
@@ -244,8 +282,8 @@ style(ws4, "F4", "Round 3 Pass %", bold=True, size=9, fill=P3, center=True)
 style(ws4, "G4", "Pass % = items scored Pass ÷ items scored (Partial and Fail both count as not passed). Feeds Sheets 1 and 2 automatically.", size=8, color="5A6B7F", border=False)
 ws4.merge_cells("G4:L4")
 
-agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot"]
-DATA_TOP, DATA_BOT = 13, 54
+agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot"]
+DATA_TOP, DATA_BOT = 13, 60
 for r, name in enumerate(agents, 5):
     style(ws4, f"A{r}", name, size=9)
     style(ws4, f"B{r}", f'=COUNTIF($B${DATA_TOP}:$B${DATA_BOT},$A{r})', size=9, center=True)
@@ -270,7 +308,7 @@ for i, (h, f) in enumerate(zip(h4, f4), 1):
     style(ws4, f"{get_column_letter(i)}{HR_ROW}", h, bold=True, size=9, fill=f, center=True)
 
 P, PA, F = "Pass", "Partial", "Fail"
-hr = "HR Policy Q&A Bot"; es = "Engineering Spec Summarizer"; it = "IT Helpdesk Q&A Bot"
+hr = "HR Policy Q&A Bot"; es = "Engineering Spec Summarizer"; it = "IT Helpdesk Q&A Bot"; jjb = "JJB Invoice Q&A Bot"
 items = [
  # --- HR Policy Q&A Bot: 20 items. Baseline 13/20=65%, R1 16/20=80%, R2 18/20=90%, R3 19/20=95%
  ("HR-01",hr,"Ch.1 Leave Policy","How many days of annual leave do new employees get?","10 days in the first year","No",P,P,P,P,"",""),
@@ -309,6 +347,17 @@ items = [
  # --- IT Helpdesk Q&A Bot: Phase 0 in progress, no runs yet
  ("IT-01",it,"KB-0012 VPN Setup","How do I connect to the VPN from home?","Install GlobalConnect, login with AD account","No",None,None,None,None,"","Phase 0 draft — not tested yet (45 items planned)"),
  ("IT-02",it,"(not in KB)","Can I install personal software on my work laptop?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
+ # --- JJB Invoice Q&A Bot: Phase 0 in progress, 10 draft items (2 traps), no runs yet
+ ("INV-Q01",jjb,"MX-88213 (Marchon Eyewear)","What is the total amount due on invoice MX-88213, and what is the payment due date?","Total EUR 18,320.50; due 2026-08-15","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-Q02",jjb,"SG-55210 (Safilo Group)","What is the VAT amount charged on invoice SG-55210?","VAT EUR 2,140.00 (22%)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-Q03",jjb,"DRV-77410 (De Rigo Vision)","How many units of frame model \"Aviator Classic\" were billed on invoice DRV-77410?","240 units","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-Q04",jjb,"KE-33201 (Kering Eyewear)","What purchase order number is referenced on invoice KE-33201?","PO-2026-0456","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-Q05",jjb,"MAR-90112 (Marcolin S.p.A.)","Has invoice MAR-90112 been paid, and if so, on what date?","Paid 2026-06-20","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-Q06",jjb,"MX-88214 (Marchon Eyewear)","What currency and exchange rate are noted on invoice MX-88214?","Currency USD; no exchange rate field present (domestic invoice)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-Q07",jjb,"DRV-77455 (De Rigo Vision)","What is the invoice date, subtotal, and total after tax for DRV-77455?","Date 2026-05-10; Subtotal EUR 9,800.00; Total EUR 11,956.00","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-Q08",jjb,"KE-33250 (Kering Eyewear)","Which cost center is billed on invoice KE-33250?","Cost center CC-4410 (Wholesale EMEA)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("INV-T01",jjb,"(not in corpus)","What early-payment discount percentage does Safilo Group offer across all their invoices?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
+ ("INV-T02",jjb,"(not in corpus)","What is the total invoice amount from Oakley Inc. for Q2 2026?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
 ]
 for r, row in enumerate(items, DATA_TOP):
     for c, v in enumerate(row, 1):
