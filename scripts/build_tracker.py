@@ -3,10 +3,14 @@
 Usage:   python build_tracker.py [output.xlsx]     (default: ./copilot-agent-evaluation-tracker.xlsx)
 Requires: pip install openpyxl
 
-To adapt for your own agents, edit three data blocks below:
-  - `rows`  (Sheet 1): one entry per agent — name, type, definition, owner, phase data
-  - `log`   (Sheet 2): one entry per fix round
-  - `items` (Sheet 4): one entry per test question/summary with Pass/Partial/Fail scores
+This engine ships with demo data only (HR Policy Q&A Bot, Engineering Spec Summarizer,
+IT Helpdesk Q&A Bot) — illustrative examples, not anyone's real agents. Real agents you are
+actually tracking belong in `local_agents.py` (same folder, gitignored, never committed):
+define `extra_rows` (Sheet 1), `extra_items` (Sheet 4), and optionally `extra_checklists`
+(Sheet 3) there in the exact same tuple/list shapes used below, and this script merges them
+in automatically if the file exists. This keeps real agent data — and the business details
+inside it — out of the shared skill's git history entirely; only engine/mechanism changes
+belong in this file.
 Pass rates on Sheets 1 and 2 are formulas linked to Sheet 4, so they update automatically.
 The script prints a reconciliation self-check (pass counts per run) after saving.
 """
@@ -16,6 +20,11 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.formatting.rule import CellIsRule
 from openpyxl.utils import get_column_letter
+
+try:
+    import local_agents  # gitignored, project-local real-agent data (optional)
+except ImportError:
+    local_agents = None
 
 ARIAL = "Arial"
 DARK = "1F2D3D"
@@ -87,17 +96,12 @@ rows = [
   None,"Not Started",
   None,None,"Not Started", None,None,"Not Started",
   None,"Writing test questions (2 drafted in Sheet 4, 45 planned incl. trap questions)."],
- [4,"JJB Invoice Q&A Bot","Q&A","Answers questions about supplier invoices using the AP knowledge base","TBD (assign owner)","Supplier invoices (AP knowledge base)",
-  8,10,"In Progress",None, None,None,"Not Started",
-  None,"Not Started",
-  None,None,"Not Started", None,None,"Not Started",
-  None,"Checklist + 10 draft test items written (2 traps). Grow to 10-20 source docs, then run baseline."],
- [5,"Meeting Room Booking Bot","Q&A","Answers questions about conference room availability and booking rules using the facilities knowledge base","TBD (assign owner)","Facilities Knowledge Base (room booking rules & availability)",
-  5,10,"In Progress",None, None,None,"Not Started",
-  None,"Not Started",
-  None,None,"Not Started", None,None,"Not Started",
-  None,"Checklist + 10 draft test items written (2 traps). Grow to 10-20 source docs, then run baseline."],
 ]
+if local_agents:
+    rows += local_agents.extra_rows
+for i, row in enumerate(rows, 1):
+    row[0] = i  # renumber "No." now that local real-agent rows may have been appended
+
 # Row math auto-sizes off len(rows) so adding an agent never requires hand-bumping a range.
 AGENT_ROW_START = 5
 AGENT_BLANK_BUFFER = 8  # extra pre-formatted empty rows left for the team to fill in later
@@ -245,36 +249,9 @@ dv_score.add("D10:D14"); dv_score.add(f"D{nxt+2}:D{nxt+6}")
 # ---- Agent-specific checklists — context-matched (domain FAIL examples), appended as each agent's
 # checklist is authored via the Quick-mode workflow. Use alongside — not instead of — the generic
 # type-level checklists above; these give a tester the exact domain wording for that one agent.
-agent_checklists = [
-    ("JJB Invoice Q&A Bot", "1F9D89", [
-        ("Did it retrieve the correct invoice (right supplier, invoice #, or date range)?",
-         "Cites or uses a different invoice or supplier", "Pass"),
-        ("Do the figures (amounts, dates, VAT, PO #) match the invoice exactly?",
-         "States EUR 18,032.50 when the invoice shows EUR 18,320.50 (digits transposed)", "Pass"),
-        ("Is every claim traceable to the invoice/AP record? (no invented terms)",
-         "States \"Net 30 payment terms\" when no such field exists on the invoice", "Fail"),
-        ("Does it say \"I don't know\" for suppliers/fields not in the AP knowledge base?",
-         "Invents a discount % for a supplier not in the corpus (e.g. Oakley Inc.)", "Pass"),
-        ("Are all parts of multi-part questions (amount + date + status) answered?",
-         "Gives the total amount but omits the due date", "Partial"),
-    ], "Example: item INV-Q07 (date + subtotal + total after tax) scores Pass on all three sub-answers "
-       "→ Pass overall. Item INV-T01 (a trap question) would Fail checks 3 and 4 if the agent invents a "
-       "discount % instead of saying it doesn't know → record as Fail and tag \"Made-up facts\"."),
-    ("Meeting Room Booking Bot", "2E7D6B", [
-        ("Did it retrieve the correct room/policy chapter (specific room, booking rules, cancellation, AV)?",
-         "Answers a Boardroom A capacity question using Huddle Room 3's details", "Pass"),
-        ("Do the figures (capacity, duration limits, advance-booking windows) match the KB exactly?",
-         "States a 4-hour max booking duration when the KB says 2 hours", "Pass"),
-        ("Is every claim traceable to the facilities KB? (no invented rules)",
-         "States \"only managers can book rooms\" when no such rule exists in the KB", "Fail"),
-        ("Does it say \"I don't know\" for rooms/scenarios not covered by the KB?",
-         "Invents booking rules for the rooftop event space, which isn't in the KB", "Pass"),
-        ("Are all parts of multi-part questions (availability + capacity, duration + cancellation) answered?",
-         "Confirms a room is available but omits its seating capacity", "Partial"),
-    ], "Example: item RM-01 (capacity + AV equipment) scores Pass on both sub-answers → Pass overall. "
-       "Item RM-T01 (a trap question) would Fail checks 3 and 4 if the agent invents a rooftop-space "
-       "booking rule instead of saying it doesn't know → record as Fail and tag \"Made-up facts\"."),
-]
+agent_checklists = []
+if local_agents:
+    agent_checklists += getattr(local_agents, "extra_checklists", [])
 
 if agent_checklists:
     style(ws3, f"A{nxt2}",
@@ -310,8 +287,7 @@ ws4.merge_cells("G4:L4")
 # Test items are defined here (ahead of the summary-table math) so DATA_TOP/DATA_BOT can
 # auto-size to len(items) instead of being hand-counted and bumped every time an agent is added.
 P, PA, F = "Pass", "Partial", "Fail"
-hr = "HR Policy Q&A Bot"; es = "Engineering Spec Summarizer"; it = "IT Helpdesk Q&A Bot"; jjb = "JJB Invoice Q&A Bot"
-rm = "Meeting Room Booking Bot"
+hr = "HR Policy Q&A Bot"; es = "Engineering Spec Summarizer"; it = "IT Helpdesk Q&A Bot"
 items = [
  # --- HR Policy Q&A Bot: 20 items. Baseline 13/20=65%, R1 16/20=80%, R2 18/20=90%, R3 19/20=95%
  ("HR-01",hr,"Ch.1 Leave Policy","How many days of annual leave do new employees get?","10 days in the first year","No",P,P,P,P,"",""),
@@ -350,31 +326,11 @@ items = [
  # --- IT Helpdesk Q&A Bot: Phase 0 in progress, no runs yet
  ("IT-01",it,"KB-0012 VPN Setup","How do I connect to the VPN from home?","Install GlobalConnect, login with AD account","No",None,None,None,None,"","Phase 0 draft — not tested yet (45 items planned)"),
  ("IT-02",it,"(not in KB)","Can I install personal software on my work laptop?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
- # --- JJB Invoice Q&A Bot: Phase 0 in progress, 10 draft items (2 traps), no runs yet
- ("INV-Q01",jjb,"MX-88213 (Marchon Eyewear)","What is the total amount due on invoice MX-88213, and what is the payment due date?","Total EUR 18,320.50; due 2026-08-15","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-Q02",jjb,"SG-55210 (Safilo Group)","What is the VAT amount charged on invoice SG-55210?","VAT EUR 2,140.00 (22%)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-Q03",jjb,"DRV-77410 (De Rigo Vision)","How many units of frame model \"Aviator Classic\" were billed on invoice DRV-77410?","240 units","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-Q04",jjb,"KE-33201 (Kering Eyewear)","What purchase order number is referenced on invoice KE-33201?","PO-2026-0456","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-Q05",jjb,"MAR-90112 (Marcolin S.p.A.)","Has invoice MAR-90112 been paid, and if so, on what date?","Paid 2026-06-20","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-Q06",jjb,"MX-88214 (Marchon Eyewear)","What currency and exchange rate are noted on invoice MX-88214?","Currency USD; no exchange rate field present (domestic invoice)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-Q07",jjb,"DRV-77455 (De Rigo Vision)","What is the invoice date, subtotal, and total after tax for DRV-77455?","Date 2026-05-10; Subtotal EUR 9,800.00; Total EUR 11,956.00","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-Q08",jjb,"KE-33250 (Kering Eyewear)","Which cost center is billed on invoice KE-33250?","Cost center CC-4410 (Wholesale EMEA)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("INV-T01",jjb,"(not in corpus)","What early-payment discount percentage does Safilo Group offer across all their invoices?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
- ("INV-T02",jjb,"(not in corpus)","What is the total invoice amount from Oakley Inc. for Q2 2026?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
- # --- Meeting Room Booking Bot: Phase 0 in progress, 10 draft items (2 traps), no runs yet
- ("RM-01",rm,"Boardroom A (12-seat)","How many people does Boardroom A seat, and does it have video conferencing equipment?","Seats 12; equipped with video conferencing (camera, mic, and screen share)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-02",rm,"Booking Rules & Limits","What is the maximum booking duration for a single meeting?","2 hours per booking","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-03",rm,"Booking Rules & Limits","How far in advance can a room be booked?","Up to 30 days in advance","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-04",rm,"Cancellation Policy","What is the cancellation deadline to avoid a no-show penalty?","Must cancel at least 1 hour before the booking start time","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-05",rm,"Huddle Room 3 (4-seat)","How many people can Huddle Room 3 accommodate?","4 people","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-06",rm,"Equipment & AV Setup","Does Huddle Room 3 have a projector or screen?","No projector; it has a wall-mounted TV screen","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-07",rm,"Booking Rules & Limits","Can I book a room for a recurring weekly meeting?","Yes, recurring bookings are allowed up to 8 weeks at a time","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-08",rm,"Boardroom A (12-seat)","Is Boardroom A available every day, or are there blackout times?","Available Mon-Fri 8am-6pm; blocked for cleaning 12:00-12:30pm daily","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
- ("RM-T01",rm,"(not in KB)","What is the booking rule for the rooftop event space?","Not covered — agent must say \"I don't know\" (rooftop space isn't in the facilities KB)","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
- ("RM-T02",rm,"(not in KB)","Can external clients book a room directly through the booking system?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
 ]
+if local_agents:
+    items += local_agents.extra_items
 
-agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot","Meeting Room Booking Bot"]
+agents = [row[1] for row in rows]  # derived from Sheet 1 so it can never drift out of sync
 
 # The summary table's height, and every fixed section below it (TEST ITEMS header, subtitle,
 # item-log header, DATA_TOP), are derived from len(agents) so a 5th/6th/... agent can never

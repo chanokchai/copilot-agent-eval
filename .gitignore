@@ -1,2 +1,4 @@
 scripts/*.xlsx
 scripts/*.scratch.py
+scripts/local_agents.py
+scripts/__pycache__/
