@@ -93,8 +93,14 @@ rows = [
   None,None,"Not Started", None,None,"Not Started",
   None,"Checklist + 10 draft test items written (2 traps). Grow to 10-20 source docs, then run baseline."],
 ]
+# Row math auto-sizes off len(rows) so adding an agent never requires hand-bumping a range.
+AGENT_ROW_START = 5
+AGENT_BLANK_BUFFER = 8  # extra pre-formatted empty rows left for the team to fill in later
+AGENT_LAST_DATA_ROW = AGENT_ROW_START + len(rows) - 1
+AGENT_LAST_ROW = AGENT_LAST_DATA_ROW + AGENT_BLANK_BUFFER
+
 DATE_COLS = {10, 11, 19}; PCT_COLS = {12, 17, 20}
-for r, row in enumerate(rows, 5):
+for r, row in enumerate(rows, AGENT_ROW_START):
     for c, v in enumerate(row, 1):
         cell = style(ws, f"{get_column_letter(c)}{r}", v, size=9,
                      center=c in (1,3,7,8,9,10,11,12,13,15,16,17,18,19,20,21,22))
@@ -110,7 +116,7 @@ for cell, f in links.items():
     ws[cell].font = Font(name=ARIAL, size=9, color=GREEN_LINK)
     ws[cell].number_format = "0%"
 
-for r in range(9, 17):
+for r in range(AGENT_LAST_DATA_ROW + 1, AGENT_LAST_ROW + 1):
     for c in range(1, 24):
         style(ws, f"{get_column_letter(c)}{r}", None, size=9)
     ws[f"V{r}"] = f'=IF(B{r}="","",COUNTIF(I{r},"Done")+COUNTIF(M{r},"Done")+COUNTIF(O{r},"Done")+COUNTIF(R{r},"Done")+COUNTIF(U{r},"Done"))'
@@ -121,13 +127,13 @@ for r in range(9, 17):
 dv_status = DataValidation(type="list", formula1='"Not Started,In Progress,Done"', allow_blank=True)
 dv_type = DataValidation(type="list", formula1='"Q&A,Summary,Hybrid"', allow_blank=True)
 ws.add_data_validation(dv_status); ws.add_data_validation(dv_type)
-for col in ("I","M","O","R","U"): dv_status.add(f"{col}5:{col}15")
-dv_type.add("C5:C15")
+for col in ("I","M","O","R","U"): dv_status.add(f"{col}{AGENT_ROW_START}:{col}{AGENT_LAST_ROW}")
+dv_type.add(f"C{AGENT_ROW_START}:C{AGENT_LAST_ROW}")
 
 green = PatternFill("solid", start_color="C6EFCE"); yellow = PatternFill("solid", start_color="FFEB9C")
 grayf = PatternFill("solid", start_color="E7E6E6"); red = PatternFill("solid", start_color="FFC7CE")
 for col in ("I","M","O","R","U"):
-    rng = f"{col}5:{col}15"
+    rng = f"{col}{AGENT_ROW_START}:{col}{AGENT_LAST_ROW}"
     ws.conditional_formatting.add(rng, CellIsRule(operator="equal", formula=['"Done"'], fill=green))
     ws.conditional_formatting.add(rng, CellIsRule(operator="equal", formula=['"In Progress"'], fill=yellow))
     ws.conditional_formatting.add(rng, CellIsRule(operator="equal", formula=['"Not Started"'], fill=grayf))
@@ -135,7 +141,7 @@ for col in ("I","M","O","R","U"):
 widths = {"A":5,"B":24,"C":10,"D":40,"E":14,"F":26,"G":9,"H":9,"I":12,"J":11,"K":11,"L":10,"M":12,"N":32,"O":12,"P":8,"Q":10,"R":12,"S":11,"T":11,"U":12,"V":8,"W":42}
 for k, v in widths.items(): ws.column_dimensions[k].width = v
 ws.row_dimensions[1].height = 24; ws.row_dimensions[2].height = 30; ws.row_dimensions[4].height = 30
-for r in range(5, 8): ws.row_dimensions[r].height = 36
+for r in range(AGENT_ROW_START, AGENT_LAST_DATA_ROW + 1): ws.row_dimensions[r].height = 36
 ws.freeze_panes = "C5"
 
 # ---------------- Sheet 2: Iteration Log ----------------
@@ -282,31 +288,8 @@ style(ws4, "F4", "Round 3 Pass %", bold=True, size=9, fill=P3, center=True)
 style(ws4, "G4", "Pass % = items scored Pass ÷ items scored (Partial and Fail both count as not passed). Feeds Sheets 1 and 2 automatically.", size=8, color="5A6B7F", border=False)
 ws4.merge_cells("G4:L4")
 
-agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot"]
-DATA_TOP, DATA_BOT = 13, 60
-for r, name in enumerate(agents, 5):
-    style(ws4, f"A{r}", name, size=9)
-    style(ws4, f"B{r}", f'=COUNTIF($B${DATA_TOP}:$B${DATA_BOT},$A{r})', size=9, center=True)
-    for col, sc in zip("CDEF", "GHIJ"):
-        f = (f'=IF(COUNTIFS($B${DATA_TOP}:$B${DATA_BOT},$A{r},{sc}${DATA_TOP}:{sc}${DATA_BOT},"<>")=0,"",'
-             f'COUNTIFS($B${DATA_TOP}:$B${DATA_BOT},$A{r},{sc}${DATA_TOP}:{sc}${DATA_BOT},"Pass")/'
-             f'COUNTIFS($B${DATA_TOP}:$B${DATA_BOT},$A{r},{sc}${DATA_TOP}:{sc}${DATA_BOT},"<>"))')
-        style(ws4, f"{col}{r}", f, size=9, center=True, bold=True, fmt="0%")
-
-style(ws4, "A9", "TEST ITEMS", bold=True, size=11, fill=DARK, color="FFFFFF")
-ws4.merge_cells("A9:L9")
-for col in "BCDEFGHIJKL":
-    ws4[f"{col}9"].fill = PatternFill("solid", start_color=DARK); ws4[f"{col}9"].border = BORDER
-style(ws4, "A10", "Score meaning: Pass = usable as-is · Partial = needs edits · Fail = wrong / made-up (see Sheet 3). Leave a score blank if the run has not happened yet.", size=8.5, color="5A6B7F", border=False)
-ws4.merge_cells("A10:L10")
-
-h4 = ["Item ID","Agent Name","Source Document","Question / Task","Expected Answer / Reference","Trap?",
-      "Baseline","Round 1","Round 2","Round 3","Latest Failure Tag","Notes"]
-f4 = [GRAY]*6 + [P1] + [P3]*3 + [P2, GRAY]
-HR_ROW = 12
-for i, (h, f) in enumerate(zip(h4, f4), 1):
-    style(ws4, f"{get_column_letter(i)}{HR_ROW}", h, bold=True, size=9, fill=f, center=True)
-
+# Test items are defined here (ahead of the summary-table math) so DATA_TOP/DATA_BOT can
+# auto-size to len(items) instead of being hand-counted and bumped every time an agent is added.
 P, PA, F = "Pass", "Partial", "Fail"
 hr = "HR Policy Q&A Bot"; es = "Engineering Spec Summarizer"; it = "IT Helpdesk Q&A Bot"; jjb = "JJB Invoice Q&A Bot"
 items = [
@@ -359,6 +342,35 @@ items = [
  ("INV-T01",jjb,"(not in corpus)","What early-payment discount percentage does Safilo Group offer across all their invoices?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
  ("INV-T02",jjb,"(not in corpus)","What is the total invoice amount from Oakley Inc. for Q2 2026?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
 ]
+
+DATA_TOP = 13
+ITEM_BLANK_BUFFER = 8  # extra pre-formatted empty rows left for the team to add items later
+DATA_BOT = DATA_TOP + len(items) - 1 + ITEM_BLANK_BUFFER
+
+agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot"]
+for r, name in enumerate(agents, 5):
+    style(ws4, f"A{r}", name, size=9)
+    style(ws4, f"B{r}", f'=COUNTIF($B${DATA_TOP}:$B${DATA_BOT},$A{r})', size=9, center=True)
+    for col, sc in zip("CDEF", "GHIJ"):
+        f = (f'=IF(COUNTIFS($B${DATA_TOP}:$B${DATA_BOT},$A{r},{sc}${DATA_TOP}:{sc}${DATA_BOT},"<>")=0,"",'
+             f'COUNTIFS($B${DATA_TOP}:$B${DATA_BOT},$A{r},{sc}${DATA_TOP}:{sc}${DATA_BOT},"Pass")/'
+             f'COUNTIFS($B${DATA_TOP}:$B${DATA_BOT},$A{r},{sc}${DATA_TOP}:{sc}${DATA_BOT},"<>"))')
+        style(ws4, f"{col}{r}", f, size=9, center=True, bold=True, fmt="0%")
+
+style(ws4, "A9", "TEST ITEMS", bold=True, size=11, fill=DARK, color="FFFFFF")
+ws4.merge_cells("A9:L9")
+for col in "BCDEFGHIJKL":
+    ws4[f"{col}9"].fill = PatternFill("solid", start_color=DARK); ws4[f"{col}9"].border = BORDER
+style(ws4, "A10", "Score meaning: Pass = usable as-is · Partial = needs edits · Fail = wrong / made-up (see Sheet 3). Leave a score blank if the run has not happened yet.", size=8.5, color="5A6B7F", border=False)
+ws4.merge_cells("A10:L10")
+
+h4 = ["Item ID","Agent Name","Source Document","Question / Task","Expected Answer / Reference","Trap?",
+      "Baseline","Round 1","Round 2","Round 3","Latest Failure Tag","Notes"]
+f4 = [GRAY]*6 + [P1] + [P3]*3 + [P2, GRAY]
+HR_ROW = 12
+for i, (h, f) in enumerate(zip(h4, f4), 1):
+    style(ws4, f"{get_column_letter(i)}{HR_ROW}", h, bold=True, size=9, fill=f, center=True)
+
 for r, row in enumerate(items, DATA_TOP):
     for c, v in enumerate(row, 1):
         style(ws4, f"{get_column_letter(c)}{r}", v, size=9, center=c in (1,6,7,8,9,10))
