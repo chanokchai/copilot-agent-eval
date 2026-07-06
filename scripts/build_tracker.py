@@ -92,6 +92,11 @@ rows = [
   None,"Not Started",
   None,None,"Not Started", None,None,"Not Started",
   None,"Checklist + 10 draft test items written (2 traps). Grow to 10-20 source docs, then run baseline."],
+ [5,"Meeting Room Booking Bot","Q&A","Answers questions about conference room availability and booking rules using the facilities knowledge base","TBD (assign owner)","Facilities Knowledge Base (room booking rules & availability)",
+  5,10,"In Progress",None, None,None,"Not Started",
+  None,"Not Started",
+  None,None,"Not Started", None,None,"Not Started",
+  None,"Checklist + 10 draft test items written (2 traps). Grow to 10-20 source docs, then run baseline."],
 ]
 # Row math auto-sizes off len(rows) so adding an agent never requires hand-bumping a range.
 AGENT_ROW_START = 5
@@ -255,6 +260,20 @@ agent_checklists = [
     ], "Example: item INV-Q07 (date + subtotal + total after tax) scores Pass on all three sub-answers "
        "→ Pass overall. Item INV-T01 (a trap question) would Fail checks 3 and 4 if the agent invents a "
        "discount % instead of saying it doesn't know → record as Fail and tag \"Made-up facts\"."),
+    ("Meeting Room Booking Bot", "2E7D6B", [
+        ("Did it retrieve the correct room/policy chapter (specific room, booking rules, cancellation, AV)?",
+         "Answers a Boardroom A capacity question using Huddle Room 3's details", "Pass"),
+        ("Do the figures (capacity, duration limits, advance-booking windows) match the KB exactly?",
+         "States a 4-hour max booking duration when the KB says 2 hours", "Pass"),
+        ("Is every claim traceable to the facilities KB? (no invented rules)",
+         "States \"only managers can book rooms\" when no such rule exists in the KB", "Fail"),
+        ("Does it say \"I don't know\" for rooms/scenarios not covered by the KB?",
+         "Invents booking rules for the rooftop event space, which isn't in the KB", "Pass"),
+        ("Are all parts of multi-part questions (availability + capacity, duration + cancellation) answered?",
+         "Confirms a room is available but omits its seating capacity", "Partial"),
+    ], "Example: item RM-01 (capacity + AV equipment) scores Pass on both sub-answers → Pass overall. "
+       "Item RM-T01 (a trap question) would Fail checks 3 and 4 if the agent invents a rooftop-space "
+       "booking rule instead of saying it doesn't know → record as Fail and tag \"Made-up facts\"."),
 ]
 
 if agent_checklists:
@@ -292,6 +311,7 @@ ws4.merge_cells("G4:L4")
 # auto-size to len(items) instead of being hand-counted and bumped every time an agent is added.
 P, PA, F = "Pass", "Partial", "Fail"
 hr = "HR Policy Q&A Bot"; es = "Engineering Spec Summarizer"; it = "IT Helpdesk Q&A Bot"; jjb = "JJB Invoice Q&A Bot"
+rm = "Meeting Room Booking Bot"
 items = [
  # --- HR Policy Q&A Bot: 20 items. Baseline 13/20=65%, R1 16/20=80%, R2 18/20=90%, R3 19/20=95%
  ("HR-01",hr,"Ch.1 Leave Policy","How many days of annual leave do new employees get?","10 days in the first year","No",P,P,P,P,"",""),
@@ -341,9 +361,20 @@ items = [
  ("INV-Q08",jjb,"KE-33250 (Kering Eyewear)","Which cost center is billed on invoice KE-33250?","Cost center CC-4410 (Wholesale EMEA)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
  ("INV-T01",jjb,"(not in corpus)","What early-payment discount percentage does Safilo Group offer across all their invoices?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
  ("INV-T02",jjb,"(not in corpus)","What is the total invoice amount from Oakley Inc. for Q2 2026?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
+ # --- Meeting Room Booking Bot: Phase 0 in progress, 10 draft items (2 traps), no runs yet
+ ("RM-01",rm,"Boardroom A (12-seat)","How many people does Boardroom A seat, and does it have video conferencing equipment?","Seats 12; equipped with video conferencing (camera, mic, and screen share)","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-02",rm,"Booking Rules & Limits","What is the maximum booking duration for a single meeting?","2 hours per booking","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-03",rm,"Booking Rules & Limits","How far in advance can a room be booked?","Up to 30 days in advance","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-04",rm,"Cancellation Policy","What is the cancellation deadline to avoid a no-show penalty?","Must cancel at least 1 hour before the booking start time","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-05",rm,"Huddle Room 3 (4-seat)","How many people can Huddle Room 3 accommodate?","4 people","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-06",rm,"Equipment & AV Setup","Does Huddle Room 3 have a projector or screen?","No projector; it has a wall-mounted TV screen","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-07",rm,"Booking Rules & Limits","Can I book a room for a recurring weekly meeting?","Yes, recurring bookings are allowed up to 8 weeks at a time","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-08",rm,"Boardroom A (12-seat)","Is Boardroom A available every day, or are there blackout times?","Available Mon-Fri 8am-6pm; blocked for cleaning 12:00-12:30pm daily","No",None,None,None,None,"","Phase 0 draft — not tested yet"),
+ ("RM-T01",rm,"(not in KB)","What is the booking rule for the rooftop event space?","Not covered — agent must say \"I don't know\" (rooftop space isn't in the facilities KB)","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
+ ("RM-T02",rm,"(not in KB)","Can external clients book a room directly through the booking system?","Not covered — agent must say \"I don't know\"","Yes",None,None,None,None,"","Phase 0 draft trap question — not tested yet"),
 ]
 
-agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot"]
+agents = ["HR Policy Q&A Bot","Engineering Spec Summarizer","IT Helpdesk Q&A Bot","JJB Invoice Q&A Bot","Meeting Room Booking Bot"]
 
 # The summary table's height, and every fixed section below it (TEST ITEMS header, subtitle,
 # item-log header, DATA_TOP), are derived from len(agents) so a 5th/6th/... agent can never
